@@ -1,120 +1,126 @@
-import numpy as np
+import torch
 import random as rd
 
-np.seterr(invalid='ignore')
+torch.manual_seed(0)
 rd.seed(0)
 
-from typing import Tuple, Optional
-from tqdm import tqdm
+from typing import Tuple
+from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-step = 0.005
-max_t = 5
-M = np.ones(3)
+
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+STEP = .005
+MAX_T = 5
+M = torch.ones(3, 1, device=DEVICE)
 G = 1
-max_magnitude = 3
-float_type = np.float32
+MAX_MAGNITUDE = 3
 
-t = np.arange(start=0, stop=max_t, step=step)
+T = torch.arange(start=0, end=MAX_T, step=STEP)
 
-def setup() -> np.ndarray:
+def setup(n: int) -> torch.Tensor:
     
-    theta = rd.random() * np.pi + np.pi / 2
-    r = rd.random()
+    theta = torch.rand(n, device=DEVICE) * torch.pi + torch.pi / 2
+    r = torch.rand(n, device=DEVICE)
 
-    x1 = (1, 0)
-    x2 = (r * np.cos(theta), r * np.sin(theta))
-    x3 = -np.add(x1, x2)
-
-    return np.stack((x1, x2, x3), axis=1, dtype=float_type)
-
-def show(x: np.ndarray, y: np.ndarray, filename: Optional[str] = None) -> None:
-  
-    plt.figure(figsize = (8, 8))
-    for i, c in zip(range(3), "gbr"):
-        plt.plot(x[:, i], y[:, i], color=c)
-        plt.scatter(x[0, i], y[0, i], color=c)
-    plt.grid()
-    plt.xlim(x.min() - 0.2, x.max() + 0.2)
-    plt.ylim(y.min() - 0.2, y.max() + 0.2)
-    if filename is not None:
-        plt.savefig(filename)
-    plt.show()
-
-def clamp_magnitude(v: np.ndarray) -> np.ndarray:
+    x1 = torch.stack((torch.ones(n, device=DEVICE), torch.zeros(n, device=DEVICE)), dim=1)
+    x2 = torch.stack((r * torch.cos(theta), r * torch.sin(theta)), dim=1)
+    x3 = - torch.add(x1, x2)
     
-    magnitude = np.linalg.norm(v)
-    return v * (max_magnitude / magnitude) if magnitude > max_magnitude else v
+    # [n, 3, 2] -> [n, body_id, (x,y)]
+    return torch.stack((x1, x2, x3), dim=1)
 
-def compute_acceleration(x: np.ndarray, y: np.ndarray, ax: np.ndarray, ay: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def compute_acceleration(positions: torch.Tensor, acceleration: torch.Tensor) -> torch.Tensor:
+    
+    # positions: [n, 3, 2] -> [n, body_id, (x,y)]
+    # acceleration: [n, 3, 3, 2] -> [n, body_id, other_body_id, (x,y)]
 
     for i in range(3):
-        
-        dx = (x[i] - x).T
-        dy = (y[i] - y).T
-        
-        d = np.sqrt(dx ** 2 + dy ** 2) ** 3
-        
-        ax[:, i] = np.nan_to_num(-dx * M * G / d)
-        ay[:, i] = np.nan_to_num(-dy * M * G / d)
-        
-    ax_tot = np.sum(ax, axis=0)
-    ay_tot = np.sum(ay, axis=0)
 
-    return ax_tot, ay_tot
+        # Get the difference in coordinates between body i and the others (including itself)
+        # [n, 3, 2]
+        dxy = (positions[:, i].unsqueeze(-1) - positions.mT).mT
 
-def run_euler(init: Optional[np.ndarray] = None) -> Tuple[np.ndarray, np.ndarray]:
+        # Get the distances (norm or hypotenuse) between body i and the others
+        # [n, 3, 2]
+        d = torch.norm(dxy, dim=-1, keepdim=True) ** 3
+
+        # Compute the acceleration towards each body in each direction (x,y)
+        acceleration[:, i] = torch.nan_to_num(-dxy * M * G / d)
+
+    # Sum the xs and ys for each body to get the total acceleration
+    # [n, 3, 2] -> [n, body_id, (x,y)]
+    return torch.sum(acceleration, dim=2)
+
+def clamp_magnitude(v: torch.Tensor) -> torch.Tensor:
+
+    # v: [n, 3, 2]
+
+    # Get all magnitudes [n, 3]
+    magnitudes = torch.norm(v, dim=-1)
+
+    # Get the mask of all large magnitudes
+    large = magnitudes > MAX_MAGNITUDE
+    if large.any():
+        # Clamp the magnitude of all large vectors in v
+        v[large] = v[large] * MAX_MAGNITUDE / magnitudes[large].unsqueeze(-1)
+
+    # [n, 3, 2]
+    return v
+
+def run_euler(n: int) -> Tuple[torch.Tensor, torch.Tensor]:
     
-    x, y = np.zeros((2, len(t) + 1, 3), dtype=float_type)
-    vx, vy = np.zeros((2, 3), dtype=float_type)
-    ax, ay = np.zeros((2, 3, 3), dtype=float_type)
+    # [n, t, 3, 2] -> [simulation_id, timestep, body_id, (x,y)]
+    positions = torch.zeros(n, len(T), 3, 2, device=DEVICE)
+
+    # [n, 3, 2] -> [simulation_id, body_id, (x,y)]
+    velocities = torch.zeros(n, 3, 2, device=DEVICE)
+
+    # [n, 3, 3, 2] -> [simulation_id, body_id, other_body_id, (x,y)]
+    acceleration = torch.zeros(n, 3, 3, 2, device=DEVICE) 
     
-    x[0], y[0] = setup() if init is None else init
+    positions[:, 0] = setup(n)
+    
+    for i in tqdm(range(len(T) - 1)):
 
-    for i in range(len(t)):
+        # Get current accelerations
+        total_acceleration = compute_acceleration(positions[:, i], acceleration)
+        
+        # Update the position with a small step in the direction of the velocity
+        positions[:, i+1] = positions[:, i] + velocities * STEP
 
-        ax_tot, ay_tot = compute_acceleration(x[i], y[i], ax, ay)
+        # Update the velocities with a small step in the direction of the acceleration
+        velocities = clamp_magnitude(velocities + total_acceleration * STEP)
+    
+    return positions
 
-        x[i+1] = x[i] + vx * step
-        y[i+1] = y[i] + vy * step
+def animation_show(positions: torch.Tensor) -> None:
+    
+    # positions -> [t, 3, 2] -> [timestep, body_id, (x,y)]
+    positions = positions.cpu()
 
-        vx, vy = np.apply_along_axis(
-            func1d=clamp_magnitude, axis=1,
-            arr=np.stack((vx + ax_tot * step, vy + ay_tot * step), axis=1)
-        ).T
-
-    return x, y
-
-def animation_show(x: np.ndarray, y: np.ndarray) -> None:
     fig, ax = plt.subplots(figsize=(8, 8))
     iterator = list(zip(range(3), "gbr"))
     for i, c in iterator:
-        ax.scatter(x[0, i], y[0, i], color=c)
-    lines = [ax.plot(x[0, i], y[0, i], color=c)[0] for i, c in iterator]
+        ax.scatter(positions[0, i, 0], positions[0, i, 1], color=c)
+    lines = [ax.plot(positions[0, i, 0], positions[0, i, 1], color=c)[0] for i, c in iterator]
     ax.grid()
-    ax.set_xlim(x.min() - 0.2, x.max() + 0.2)
-    ax.set_ylim(y.min() - 0.2, y.max() + 0.2)
+    ax.set_xlim(positions[:, :, 0].min() - 0.2, positions[:, :, 0].max() + 0.2)
+    ax.set_ylim(positions[:, :, 1].min() - 0.2, positions[:, :, 1].max() + 0.2)
 
     def update(frame):
         for i, line in enumerate(lines):
-            line.set_xdata(x[:frame, i])
-            line.set_ydata(y[:frame, i])
+            line.set_xdata(positions[:frame, i, 0])
+            line.set_ydata(positions[:frame, i, 1])
         return lines
 
-    ani = FuncAnimation(fig=fig, func=update, frames=len(x), interval=5)
+    ani = FuncAnimation(fig=fig, func=update, frames=len(positions), interval=5)
     plt.show()
 
-def generate_data(n_simulations: int = 10_000, data_dir = 'data/') -> None:
-    
-    # [Simulation_id, (x, y), timestep, body_id]
-    data = np.zeros((n_simulations, 2, len(t) + 1, 3), dtype=float_type)
-    
-    for i in tqdm(range(n_simulations)):
-        data[i] = np.stack(run_euler())
-    assert data.dtype == float_type
-    np.save(data_dir + 'all_data.npy', data)
-
+def generate_data(n_simulations: int = 2, save_dir: str = 'data/three_bodies_data_2D.pt') -> None:
+    torch.save(run_euler(n=n_simulations), save_dir)
 
 if __name__ == "__main__":
-    generate_data()
+    generate_data(n_simulations=10_000)
