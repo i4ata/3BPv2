@@ -1,8 +1,8 @@
 import torch
 import random as rd
 
-torch.manual_seed(0)
-rd.seed(0)
+torch.manual_seed(1)
+rd.seed(1)
 
 from typing import Tuple
 from tqdm.auto import tqdm
@@ -122,5 +122,21 @@ def animation_show(positions: torch.Tensor) -> None:
 def generate_data(n_simulations: int = 2, save_dir: str = 'data/three_bodies_data_2D.pt') -> None:
     torch.save(run_euler(n=n_simulations), save_dir)
 
+def show(positions: torch.Tensor) -> None:
+
+    # positions -> [t, 3, 2] -> [timestep, body_id, (x,y)]
+    positions = positions.cpu()
+
+    iterator = list(zip(range(3), "gbr"))
+    for i, c in iterator:
+        plt.scatter(positions[0, i, 0], positions[0, i, 1], color=c)
+        plt.plot(positions[:, i, 0], positions[:, i, 1], color=c)
+    plt.grid()
+    plt.xlim(positions[:, :, 0].min() - 0.2, positions[:, :, 0].max() + 0.2)
+    plt.ylim(positions[:, :, 1].min() - 0.2, positions[:, :, 1].max() + 0.2)
+    plt.show()
+
+
 if __name__ == "__main__":
-    generate_data(n_simulations=10_000)
+    d = run_euler(n=1)[0]
+    show(d)
