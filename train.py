@@ -7,9 +7,9 @@ from tqdm import tqdm
 
 if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    dataset = ThreeBodiesDataset()
+    dataset = ThreeBodiesDataset(device=device)
     train_dataloader, test_dataloader = dataset.get_dataloaders(batch_size=100)
-    model = ThreeBodiesModel(device=device).to(device)
+    model = ThreeBodiesModel().to(device)
     optimizer = torch.optim.Adam(model.parameters())
     loss_fn = nn.MSELoss()
 
@@ -17,9 +17,9 @@ if __name__ == '__main__':
 
         train_loss, test_loss = 0, 0
 
-        for X in train_dataloader:
+        for X, in train_dataloader:
             
-            X = X[0].to(device)
+            X = X.to(device)
             X_pred = model(X)
             loss = loss_fn(X_pred, X)
 
@@ -30,9 +30,9 @@ if __name__ == '__main__':
             train_loss += loss
         train_loss /= len(train_dataloader)
 
-        for X in test_dataloader:
+        for X, in test_dataloader:
 
-            X = X[0].to(device)
+            X = X.to(device)
             with torch.inference_mode():
             
                 X_pred = model(X)
@@ -43,5 +43,5 @@ if __name__ == '__main__':
 
         print(f'Train loss: {train_loss}, Test loss: {test_loss}')
 
-    torch.save(model.state_dict(), 'model.pth')
+    torch.save(model.state_dict(), 'models/model.pt')
         

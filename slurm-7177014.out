@@ -1,0 +1,65 @@
+The following modules were not unloaded:
+  (Use "module --force purge" to unload all):
+
+  1) 2023.01   2) StdEnv
+  0%|          | 0/20 [00:00<?, ?it/s]  5%|▌         | 1/20 [01:25<27:08, 85.71s/it] 10%|█         | 2/20 [02:51<25:47, 85.98s/it] 15%|█▌        | 3/20 [04:18<24:26, 86.25s/it] 20%|██        | 4/20 [05:43<22:53, 85.84s/it] 25%|██▌       | 5/20 [07:10<21:33, 86.21s/it] 30%|███       | 6/20 [08:37<20:10, 86.47s/it] 35%|███▌      | 7/20 [10:02<18:39, 86.14s/it] 40%|████      | 8/20 [11:26<17:05, 85.44s/it] 45%|████▌     | 9/20 [12:50<15:33, 84.86s/it] 50%|█████     | 10/20 [14:13<14:03, 84.39s/it] 55%|█████▌    | 11/20 [15:36<12:34, 83.84s/it] 60%|██████    | 12/20 [16:57<11:04, 83.10s/it] 65%|██████▌   | 13/20 [18:18<09:37, 82.48s/it] 70%|███████   | 14/20 [19:39<08:11, 81.88s/it] 75%|███████▌  | 15/20 [20:59<06:46, 81.26s/it] 80%|████████  | 16/20 [22:19<05:23, 80.86s/it] 85%|████████▌ | 17/20 [23:38<04:01, 80.55s/it] 90%|█████████ | 18/20 [24:58<02:40, 80.38s/it] 95%|█████████▌| 19/20 [26:19<01:20, 80.40s/it]100%|██████████| 20/20 [27:39<00:00, 80.21s/it]100%|██████████| 20/20 [27:39<00:00, 82.96s/it]
+Train loss: 0.1389446258544922, Test loss: 0.01681339740753174
+Train loss: 0.00766075449064374, Test loss: 0.0035008371341973543
+Train loss: 0.002301021246239543, Test loss: 0.0016524980310350657
+Train loss: 0.0011813777964562178, Test loss: 0.001015135901980102
+Train loss: 0.0007393124396912754, Test loss: 0.0006995334988459945
+Train loss: 0.0005125495372340083, Test loss: 0.0005217743455432355
+Train loss: 0.00038055385812185705, Test loss: 0.0004065076063852757
+Train loss: 0.00029471851303242147, Test loss: 0.00033654971048235893
+Train loss: 0.0002378167409915477, Test loss: 0.0002751720021478832
+Train loss: 0.0001974650949705392, Test loss: 0.00023890359443612397
+Train loss: 0.00016776165284682065, Test loss: 0.00021297515195328742
+Train loss: 0.000144549339893274, Test loss: 0.00019475216686259955
+Train loss: 0.00012549398525152355, Test loss: 0.00017132851644419134
+Train loss: 0.00010968870628857985, Test loss: 0.00014579571143258363
+Train loss: 9.572011913405731e-05, Test loss: 0.00012865920143667608
+Train loss: 8.430892921751365e-05, Test loss: 0.00011829356662929058
+Train loss: 7.623697456438094e-05, Test loss: 0.0001057204935932532
+Train loss: 6.95691051078029e-05, Test loss: 9.719919034978375e-05
+Train loss: 6.411154754459858e-05, Test loss: 9.460782166570425e-05
+Train loss: 5.980555943096988e-05, Test loss: 9.200461499858648e-05
+
+###############################################################################
+Hábrók Cluster
+Job 7177014 for user s4362675
+Finished at: Sun Feb 11 14:06:40 CET 2024
+
+Job details:
+============
+
+Job ID              : 7177014
+Name                : bodies_job
+User                : s4362675
+Partition           : gpushort
+Nodes               : v100gpu8
+Number of Nodes     : 1
+Cores               : 8
+Number of Tasks     : 1
+State               : COMPLETED
+Submit              : 2024-02-11T13:38:46
+Start               : 2024-02-11T13:38:47
+End                 : 2024-02-11T14:06:40
+Reserved walltime   : 00:59:00
+Used walltime       : 00:27:53
+Used CPU time       : 00:27:35 (efficiency: 12.37%)
+% User (Computation): 99.80%
+% System (I/O)      :  0.20%
+Mem reserved        : 8G
+Max Mem (Node/step) : 1.20G (v100gpu8, per node)
+Full Max Mem usage  : 1.20G
+Total Disk Read     : 262.65M
+Total Disk Write    : 118.02K
+
+Acknowledgements:
+=================
+
+Please see this page for information about acknowledging Hábrók in your publications:
+
+https://wiki.hpc.rug.nl/habrok/introduction/scientific_output
+
+################################################################################

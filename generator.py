@@ -134,6 +134,7 @@ def show(positions: torch.Tensor) -> None:
     plt.grid()
     plt.xlim(positions[:, :, 0].min() - 0.2, positions[:, :, 0].max() + 0.2)
     plt.ylim(positions[:, :, 1].min() - 0.2, positions[:, :, 1].max() + 0.2)
+    plt.savefig('show.png', dpi=200)
     plt.show()
 
 
